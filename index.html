@@ -1,24 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); color: white; text-align: center; font-family: sans-serif; }
-        .coin-display { font-size: 30px; margin-top: 50px; color: #f1c40f; font-weight: bold; }
-        .character { width: 250px; margin-top: 40px; cursor: pointer; transition: transform 0.1s; }
-        .character:active { transform: scale(0.95); }
+        body { 
+            background: radial-gradient(circle, #1a1a2e 0%, #0f3460 100%); 
+            color: white; font-family: 'Segoe UI', sans-serif; 
+            text-align: center; margin: 0; overflow: hidden; height: 100vh;
+        }
+        .header { padding: 20px; font-size: 24px; font-weight: bold; color: #00d2ff; }
+        .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.1); padding: 10px; }
+        .coin-container { margin-top: 50px; position: relative; }
+        .character { 
+            width: 280px; filter: drop-shadow(0 0 20px #00d2ff);
+            transition: transform 0.05s; cursor: pointer;
+        }
+        .character:active { transform: scale(0.92); }
+        .tap-effect { position: absolute; color: #00d2ff; font-weight: bold; animation: floatUp 0.5s ease-out forwards; pointer-events: none; }
+        @keyframes floatUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-100px); } }
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #16213e; padding: 15px 0; border-top: 2px solid #00d2ff; }
+        .nav-item { flex: 1; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="coin-display">💰 <span id="coins">0</span></div>
-    <img src="https://via.placeholder.com/250" class="character" onclick="tap()">
+    <div class="header">DANY MATRIX</div>
+    <div class="stats">
+        <div>💰 <span id="balance">0.00</span></div>
+        <div>⚡ <span id="energy">1000/1000</span></div>
+    </div>
+
+    <div class="coin-container" onclick="handleTap(event)">
+        <img src="https://i.postimg.cc/85zM6m2G/character-matrix.png" class="character" id="main-btn">
+    </div>
+
+    <div class="footer">
+        <div class="nav-item">🏠 Home</div>
+        <div class="nav-item">👥 Friends</div>
+        <div class="nav-item">📈 Earn</div>
+        <div class="nav-item">🚀 Boost</div>
+    </div>
 
     <script>
-        let count = 0;
-        function tap() {
-            count++;
-            document.getElementById('coins').innerText = count;
-            // Telegram.WebApp.HapticFeedback.impactOccurred('medium'); // Vibrazione
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // Apre l'app a tutto schermo
+        let coins = 0;
+
+        function handleTap(e) {
+            coins += 1;
+            document.getElementById('balance').innerText = coins.toFixed(2);
+            
+            // Effetto visivo del numero che sale
+            const effect = document.createElement('div');
+            effect.className = 'tap-effect';
+            effect.innerText = '+1';
+            effect.style.left = e.pageX + 'px';
+            effect.style.top = e.pageY + 'px';
+            document.body.appendChild(effect);
+            setTimeout(() => effect.remove(), 500);
+
+            // Vibrazione (Haptic Feedback)
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         }
     </script>
 </body>
