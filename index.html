@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); color: white; text-align: center; font-family: sans-serif; }
+        .coin-display { font-size: 30px; margin-top: 50px; color: #f1c40f; font-weight: bold; }
+        .character { width: 250px; margin-top: 40px; cursor: pointer; transition: transform 0.1s; }
+        .character:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+    <div class="coin-display">💰 <span id="coins">0</span></div>
+    <img src="https://via.placeholder.com/250" class="character" onclick="tap()">
+
+    <script>
+        let count = 0;
+        function tap() {
+            count++;
+            document.getElementById('coins').innerText = count;
+            // Telegram.WebApp.HapticFeedback.impactOccurred('medium'); // Vibrazione
+        }
+    </script>
+</body>
+</html>
