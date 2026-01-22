@@ -1,67 +1,40 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { 
-            background: radial-gradient(circle, #1a1a2e 0%, #0f3460 100%); 
-            color: white; font-family: 'Segoe UI', sans-serif; 
-            text-align: center; margin: 0; overflow: hidden; height: 100vh;
-        }
-        .header { padding: 20px; font-size: 24px; font-weight: bold; color: #00d2ff; }
-        .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.1); padding: 10px; }
-        .coin-container { margin-top: 50px; position: relative; }
-        .character { 
-            width: 280px; filter: drop-shadow(0 0 20px #00d2ff);
-            transition: transform 0.05s; cursor: pointer;
-        }
-        .character:active { transform: scale(0.92); }
-        .tap-effect { position: absolute; color: #00d2ff; font-weight: bold; animation: floatUp 0.5s ease-out forwards; pointer-events: none; }
-        @keyframes floatUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-100px); } }
-        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #16213e; padding: 15px 0; border-top: 2px solid #00d2ff; }
-        .nav-item { flex: 1; font-size: 12px; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .card { background: #111; border: 1px solid #333; border-radius: 20px; padding: 25px; margin-top: 20px; }
+        .balance { font-size: 40px; color: #00ff88; font-weight: bold; margin: 15px 0; }
+        .btn { width: 100%; background: #00ff88; color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        .live-status { font-size: 10px; color: #00ff88; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
-    <div class="header">DANY MATRIX</div>
-    <div class="stats">
-        <div>💰 <span id="balance">0.00</span></div>
-        <div>⚡ <span id="energy">1000/1000</span></div>
+    <div class="live-status">● Server Matrix Connesso</div>
+
+    <div class="card">
+        <div style="font-size: 12px; opacity: 0.5;">RENDITA ATTIVA (EUR)</div>
+        <div class="balance">€ <span id="bal">0.0000</span></div>
+        <div style="font-size: 11px; color: #00ff88;">+ 2.5% Profitto Giornaliero</div>
     </div>
 
-    <div class="coin-container" onclick="handleTap(event)">
-        <img src="https://i.postimg.cc/85zM6m2G/character-matrix.png" class="character" id="main-btn">
-    </div>
-
-    <div class="footer">
-        <div class="nav-item">🏠 Home</div>
-        <div class="nav-item">👥 Friends</div>
-        <div class="nav-item">📈 Earn</div>
-        <div class="nav-item">🚀 Boost</div>
-    </div>
+    <button class="btn" onclick="richiediPagamento()">➕ DEPOSITA FONDI</button>
+    <button class="btn" style="background: transparent; color: #fff; border: 1px solid #333;" onclick="window.Telegram.WebApp.close()">ESCI</button>
 
     <script>
         let tg = window.Telegram.WebApp;
-        tg.expand(); // Apre l'app a tutto schermo
-        let coins = 0;
+        tg.expand();
 
-        function handleTap(e) {
-            coins += 1;
-            document.getElementById('balance').innerText = coins.toFixed(2);
-            
-            // Effetto visivo del numero che sale
-            const effect = document.createElement('div');
-            effect.className = 'tap-effect';
-            effect.innerText = '+1';
-            effect.style.left = e.pageX + 'px';
-            effect.style.top = e.pageY + 'px';
-            document.body.appendChild(effect);
-            setTimeout(() => effect.remove(), 500);
+        // Incremento fluido lato client (per bellezza)
+        let s = 0;
+        setInterval(() => { s += 0.0001; document.getElementById('bal').innerText = s.toFixed(4); }, 200);
 
-            // Vibrazione (Haptic Feedback)
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        function richiediPagamento() {
+            // Chiude l'app e manda il comando al bot per mostrare PayPal/Crypto
+            tg.sendData("INFO_PAGAMENTO");
         }
     </script>
 </body>
