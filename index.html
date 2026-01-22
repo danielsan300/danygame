@@ -4,75 +4,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --ton-blue: #0088cc; --neon-green: #00ff88; }
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; text-align: center; overflow: hidden; }
+        :root { --neon: #00f3ff; --neon-red: #ff003c; --bg: #020202; --glass: rgba(0, 243, 255, 0.05); }
+        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; overflow: hidden; }
         
-        /* Immagine caricata su GitHub */
-        .brand-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 2px solid var(--ton-blue);
-            margin-bottom: 20px;
-            box-shadow: 0 0 30px rgba(0, 136, 204, 0.5);
-            object-fit: cover;
+        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.3; }
+
+        /* EFFETTI SPECIALI */
+        .scanline { width: 100%; height: 100px; background: linear-gradient(0deg, rgba(0,243,255,0) 0%, rgba(0,243,255,0.1) 50%, rgba(0,243,255,0) 100%); position: fixed; animation: scan 4s linear infinite; pointer-events: none; }
+        @keyframes scan { from { top: -100px; } to { top: 100vh; } }
+
+        .header { text-align: center; padding: 25px; border-bottom: 1px solid var(--neon); background: rgba(0,0,0,0.8); }
+        .logo { width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 0 20px var(--neon); border: 2px solid var(--neon); }
+
+        .page { display: none; padding: 20px; height: 80vh; overflow-y: auto; padding-bottom: 100px; }
+        .page.active { display: block; animation: glitch 0.3s ease; }
+
+        .cyber-card { 
+            background: var(--glass); border: 1px solid var(--neon); border-radius: 15px; padding: 20px; 
+            backdrop-filter: blur(10px); box-shadow: inset 0 0 15px rgba(0,243,255,0.2); margin-bottom: 20px;
         }
 
-        .luxury-card {
-            background: linear-gradient(145deg, #111, #050505);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 40px;
-            padding: 40px 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            position: relative;
-        }
+        .balance-text { font-family: 'Orbitron', sans-serif; font-size: 38px; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+        .chip-icon { width: 40px; float: right; animation: pulse 2s infinite; }
 
-        .balance-label { font-size: 10px; text-transform: uppercase; letter-spacing: 3px; opacity: 0.5; }
-        .balance-value { font-size: 55px; font-weight: 900; color: #fff; margin: 15px 0; font-variant-numeric: tabular-nums; }
-        
-        .badge { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); padding: 5px 15px; border-radius: 50px; font-size: 11px; font-weight: bold; }
+        /* ARENA TRADING */
+        .arena-container { height: 200px; background: url('bg_arena.png') center; background-size: cover; border-radius: 10px; border: 1px solid var(--neon-red); display: flex; align-items: flex-end; padding: 5px; gap: 2px; }
+        .bar { flex: 1; background: var(--neon); min-height: 10px; transition: height 0.5s ease; opacity: 0.8; }
 
-        .btn-action {
-            width: 100%; background: var(--ton-blue); color: #fff; border: none; 
-            padding: 20px; border-radius: 20px; font-weight: 800; font-size: 16px; 
-            margin-top: 30px; box-shadow: 0 10px 20px rgba(0,136,204,0.3);
-        }
+        /* NAVBAR */
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 15px 0; border-top: 2px solid var(--neon); }
+        .nav-btn { text-align: center; opacity: 0.5; transition: 0.3s; cursor: pointer; }
+        .nav-btn img { width: 25px; border-radius: 5px; }
+        .nav-btn.active { opacity: 1; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
 
-        .footer-info { margin-top: 30px; font-size: 10px; opacity: 0.3; text-transform: uppercase; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes glitch { 0% { transform: skew(5deg); } 50% { transform: skew(-5deg); } 100% { transform: skew(0); } }
     </style>
 </head>
 <body>
 
-    <img src="METTI_IL_NOME_DELLA_FOTO.png" class="brand-img" alt="Matrix Logo">
+    <canvas id="matrix-canvas"></canvas>
+    <div class="scanline"></div>
+    <audio id="sfx" src="sound_clik.mp3"></audio>
 
-    <div class="luxury-card">
-        <div class="balance-label">Profitto Generato</div>
-        <div class="balance-value">€ <span id="val">0.0000</span></div>
-        <span class="badge">● RENDITA 4.0% ATTIVA</span>
+    <div class="header">
+        <img src="logo.png" class="logo">
+        <div style="font-family: 'Orbitron'; font-size: 12px; margin-top: 5px; letter-spacing: 3px;">DANYGAME_OS_V18</div>
     </div>
 
-    <button class="btn-action" onclick="sendToBot()">💎 POTENZIA INVESTIMENTO</button>
-    <button class="btn-action" style="background:transparent; border:1px solid #222;" onclick="window.Telegram.WebApp.close()">ESCI</button>
+    <div id="home" class="page active">
+        <div class="cyber-card">
+            <img src="chilp..png" class="chip-icon">
+            <small>WALLET_BALANCE</small>
+            <div class="balance-text">€ <span id="bal-val">0.0000</span></div>
+            <div style="margin-top: 10px; font-size: 10px; color: #00ff88;">● MINING ACTIVE: 124.5 MH/s</div>
+        </div>
+        <button onclick="playSfx()" style="width:100%; padding:15px; background:transparent; border:1px solid var(--neon); color:var(--neon); font-family:'Orbitron';">UPGRADE SYSTEM</button>
+    </div>
 
-    <div class="footer-info">Protocollo Criptato TON Network</div>
+    <div id="arena" class="page">
+        <h3 style="text-align:center; font-family:'Orbitron';">NEURAL ARENA</h3>
+        <div class="arena-container" id="chart"></div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="playSfx()" style="flex:1; padding:15px; background:var(--neon-red); border:none; color:white; font-weight:bold;">SHORT</button>
+            <button onclick="playSfx()" style="flex:1; padding:15px; background:var(--neon); border:none; color:black; font-weight:bold;">LONG</button>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <div class="nav-btn active" onclick="showPage('home', this)">
+            <img src="logo.png"><br><small>CORE</small>
+        </div>
+        <div class="nav-btn" onclick="showPage('arena', this)">
+            <img src="nav_arena.png"><br><small>ARENA</small>
+        </div>
+    </nav>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        tg.headerColor = "#000000";
 
-        // Animazione del saldo fluida
-        let saldo = 0.0000;
-        setInterval(() => {
-            saldo += 0.0003;
-            document.getElementById('val').innerText = saldo.toFixed(4);
-        }, 120);
-
-        function sendToBot() {
-            tg.HapticFeedback.impactOccurred('heavy');
-            tg.sendData("RICHIESTA_PAGAMENTO");
+        function playSfx() {
+            let a = document.getElementById('sfx');
+            a.currentTime = 0;
+            a.play();
+            tg.HapticFeedback.impactOccurred('medium');
         }
+
+        function showPage(id, el) {
+            playSfx();
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // MATRIX BACKGROUND
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const letters = "0101DANYGAME01";
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#00f3ff"; ctx.font = fontSize + "px monospace";
+            drops.forEach((y, i) => {
+                const text = letters[Math.floor(Math.random() * letters.length)];
+                ctx.fillText(text, i * fontSize, y * fontSize);
+                if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            });
+        }
+        setInterval(drawMatrix, 50);
+
+        // SALDO DINAMICO
+        let balance = 0.0000;
+        setInterval(() => {
+            balance += 0.0003;
+            document.getElementById('bal-val').innerText = balance.toFixed(4);
+        }, 100);
+
+        // GRAFICO ARENA
+        const chart = document.getElementById('chart');
+        for(let i=0; i<30; i++) {
+            let b = document.createElement('div');
+            b.className = 'bar';
+            chart.appendChild(b);
+        }
+        setInterval(() => {
+            document.querySelectorAll('.bar').forEach(b => {
+                b.style.height = Math.random() * 100 + "%";
+            });
+        }, 800);
     </script>
 </body>
 </html>
