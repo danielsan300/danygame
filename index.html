@@ -7,20 +7,27 @@ async function caricaPannelloAdmin() {
         const response = await fetch(`${NGROK_URL}/api/admin_panel?id=${myId}`);
         
         if (response.status === 403) {
+            document.getElementById('admin-tab').style.display = 'none';
             return;
         }
 
         const utenti = await response.json();
-        let html = '<h3>DATABASE UTENTI</h3>';
+        let html = '<h3 style="color:#ffcf33; font-family:Orbitron;">DATABASE UTENTI</h3>';
 
         utenti.forEach(u => {
             html += `
-                <div class="card" style="border-left: 4px solid #ff00ff; margin-bottom:10px; padding:10px;">
-                    <div style="display:flex; justify-content:space-between;">
+                <div class="card" style="border-left: 4px solid #ff00ff; margin-bottom:10px; padding:15px; background:rgba(0,0,0,0.3);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
                         <b>${u.nome}</b> 
-                        <span style="color:#ffcf33">€ ${u.saldo.toFixed(2)}</span>
+                        <span style="color:#ffcf33; font-weight:bold;">€ ${u.saldo.toFixed(2)}</span>
                     </div>
                     <div style="margin-top:5px; font-size:10px; opacity:0.6;">ID: ${u.id}</div>
+                    
+                    <div style="margin-top:10px; display:flex; gap:10px;">
+                        <button onclick="modificaSaldo(${u.id}, 10)" style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">+10€</button>
+                        <button onclick="modificaSaldo(${u.id}, -10)" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">-10€</button>
+                        <button onclick="bannaUtente(${u.id})" style="background:#6c757d; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">BAN</button>
+                    </div>
                 </div>`;
         });
 
@@ -28,9 +35,35 @@ async function caricaPannelloAdmin() {
         document.getElementById('admin-tab').style.display = 'block';
 
     } catch (e) {
-        console.error("Server Offline");
+        console.error("Server Offline o URL ngrok errato");
     }
 }
 
+// Funzione per aggiungere o togliere soldi
+async function modificaSaldo(targetId, amount) {
+    const myId = window.Telegram.WebApp.initDataUnsafe.user.id;
+    try {
+        await fetch(`${NGROK_URL}/api/edit_balance?admin=${myId}&target=${targetId}&amount=${amount}`);
+        caricaPannelloAdmin(); // Ricarica subito la lista per vedere il cambio
+    } catch (e) {
+        alert("Errore durante la modifica saldo");
+    }
+}
+
+// Funzione per eliminare l'utente dal database
+async function bannaUtente(targetId) {
+    const myId = window.Telegram.WebApp.initDataUnsafe.user.id;
+    if (confirm("Vuoi davvero eliminare questo utente dal database locale?")) {
+        try {
+            await fetch(`${NGROK_URL}/api/ban?admin=${myId}&target=${targetId}`);
+            caricaPannelloAdmin();
+        } catch (e) {
+            alert("Errore durante il ban");
+        }
+    }
+}
+
+// Aggiornamento automatico ogni 10 secondi
 setInterval(caricaPannelloAdmin, 10000);
+// Primo caricamento all'avvio
 caricaPannelloAdmin();
