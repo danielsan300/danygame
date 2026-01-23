@@ -1,47 +1,152 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <title>DanielSant Mining</title>
-  <style>
-    body { background:#000; color:#0ff; font-family:Consolas; display:flex; justify-content:center; align-items:center; height:100vh; }
-    .panel { border:1px solid #0ff; padding:30px; border-radius:10px; text-align:center; width:500px; background:rgba(0,0,0,0.7); }
-    .btn { border:1px solid #0ff; background:#000; color:#0ff; padding:10px 20px; border-radius:999px; cursor:pointer; }
-    .btn:hover { background:#0ff; color:#000; }
-    .progress { margin-top:20px; height:20px; width:100%; border:1px solid #0ff; border-radius:6px; background:#111; position:relative; }
-    .bar { position:absolute; top:0; left:0; height:100%; width:0%; background:linear-gradient(to right,#0ff,#7ff); transition:width 1s linear; }
-    .info { margin-top:15px; font-size:13px; }
-    .admin { margin-top:20px; text-align:left; }
-    table { width:100%; border-collapse:collapse; font-size:12px; }
-    th, td { border:1px solid #0ff; padding:4px; }
-  </style>
+<meta charset="UTF-8">
+<title>DanielSant — Arena Dashboard</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: url('bg_arena.png') no-repeat center center fixed;
+        background-size: cover;
+        font-family: 'Consolas', monospace;
+        color: #00ff9f;
+        overflow: hidden;
+    }
+    #nav {
+        background: url('nav_arena.png') no-repeat center;
+        background-size: contain;
+        height: 80px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    #logo {
+        background: url('logo.png') no-repeat center;
+        background-size: contain;
+        height: 100px;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .box {
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid #00ff9f;
+        box-shadow: 0 0 15px #00ff9f;
+        padding: 20px;
+        margin: 20px auto;
+        width: 80%;
+        max-width: 900px;
+        text-align: center;
+    }
+    h1 {
+        color: #00ffaa;
+        text-shadow: 0 0 10px #00ffaa;
+        margin-bottom: 10px;
+    }
+    canvas {
+        margin-top: 20px;
+    }
+</style>
 </head>
 <body>
-  <div class="panel">
-    <h1>DanielSant Mining</h1>
-    <button class="btn" onclick="startMining()">🚀 Avvia Mining (10€)</button>
-    <div class="progress"><div class="bar" id="progressBar"></div></div>
-    <div class="info" id="infoText">Nessun contratto attivo.</div>
-    <div class="admin" id="adminPanel"></div>
-  </div>
 
-  <script>
-    const USER_ID = 294395952; // il tuo ID Telegram
+<div id="nav"></div>
+<div id="logo"></div>
 
-    async function startMining() {
-      const res = await fetch(`/api/mining/start/${USER_ID}`);
-      const data = await res.json();
-      if (data.ok) {
-        window.open(data.pay_url, "_blank");
-        document.getElementById("infoText").textContent = "Contratto attivo, in attesa pagamento...";
-        setInterval(updateStatus, 3000);
-      } else {
-        alert("Errore generazione pagamento.");
-      }
-    }
+<div class="box">
+    <h1>⚡ DanielSant — Arena Dashboard</h1>
+    <p id="users">Utenti: ...</p>
+    <p id="contracts">Contratti: ...</p>
+    <p id="capital">Capitale Totale: ...</p>
+    <p id="power">Potenza Rete: ...</p>
+    <p id="generated">Crediti Generati: ...</p>
+</div>
 
-    async function updateStatus() {
-      const res = await fetch(`/api/mining/status/${USER_ID}`);
-      const data = await res.json();
-      if (data.active) {
-        document.getElementById
+<div class="box">
+    <h2>🌌 Andamento Crediti Generati</h2>
+    <canvas id="creditsChart" width="800" height="300"></canvas>
+</div>
+
+<audio id="clickSound" src="sound_clik.mp3" preload="auto"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let chart;
+let labels = [];
+let values = [];
+
+function initChart() {
+    const ctx = document.getElementById('creditsChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Crediti Generati',
+                data: values,
+                borderColor: '#00ff9f',
+                backgroundColor: 'rgba(0, 255, 159, 0.15)',
+                borderWidth: 2,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#00ffaa',
+                pointBorderColor: '#00ffaa'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#00ff9f'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#00ff9f' },
+                    grid: { color: 'rgba(0,255,159,0.1)' }
+                },
+                y: {
+                    ticks: { color: '#00ff9f' },
+                    grid: { color: 'rgba(0,255,159,0.1)' }
+                }
+            }
+        }
+    });
+}
+
+function updateData() {
+    fetch("/api/overview")
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById("users").innerText = "Utenti: " + data.users;
+            document.getElementById("contracts").innerText = "Contratti: " + data.contracts;
+            document.getElementById("capital").innerText = "Capitale Totale: " + data.capital + "€";
+            document.getElementById("power").innerText = "Potenza Rete: " + data.network_power;
+            document.getElementById("generated").innerText = "Crediti Generati: " + data.generated_credits;
+
+            const now = new Date();
+            const label = now.toLocaleTimeString();
+
+            labels.push(label);
+            values.push(data.generated_credits);
+
+            if (labels.length > 30) {
+                labels.shift();
+                values.shift();
+            }
+
+            chart.update();
+
+            document.getElementById("clickSound").play();
+        });
+}
+
+initChart();
+setInterval(updateData, 2000);
+updateData();
+</script>
+
+</body>
+</html>
