@@ -1,239 +1,41 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<title>Admin Panel — DanielSant</title>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            background-color: #0f0f0f;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
 
-<style>
-    :root {
-        --neon-main: #00ff9f;
-        --neon-alt: #ff00ff;
-        --bg-dark: rgba(0, 0, 0, 0.85);
-        --text-main: #e0fff5;
-    }
+        h1 {
+            color: #ff4444;
+            margin-bottom: 20px;
+        }
 
-    html, body {
-        margin: 0;
-        padding: 0;
-        background: black;
-        font-family: Consolas, monospace;
-        color: var(--text-main);
-    }
-
-    .wrapper {
-        padding: 10px 6px 16px 6px;
-    }
-
-    h1 {
-        text-align: center;
-        color: var(--neon-alt);
-        text-shadow: 0 0 12px var(--neon-alt);
-        font-size: 18px;
-        margin: 6px 0 10px 0;
-    }
-
-    .box {
-        background: var(--bg-dark);
-        border: 1px solid var(--neon-main);
-        box-shadow: 0 0 10px var(--neon-main);
-        padding: 8px;
-        margin: 8px auto;
-        width: 98%;
-        border-radius: 8px;
-    }
-
-    h2 {
-        font-size: 15px;
-        margin: 4px 0 6px 0;
-        color: var(--neon-main);
-    }
-
-    p {
-        font-size: 12px;
-        margin: 2px 0;
-    }
-
-    .table-wrapper {
-        max-height: 260px;
-        overflow-y: auto;
-        border-radius: 6px;
-        border: 1px solid rgba(0,255,159,0.3);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 11px;
-    }
-
-    th, td {
-        border-bottom: 1px solid rgba(0,255,159,0.2);
-        padding: 4px;
-        text-align: left;
-    }
-
-    th {
-        background: rgba(0,255,159,0.08);
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 999px;
-        border: 1px solid var(--neon-main);
-        font-size: 10px;
-        margin-top: 4px;
-    }
-
-    .refresh-btn {
-        display: inline-block;
-        padding: 5px 10px;
-        border-radius: 999px;
-        border: 1px solid var(--neon-main);
-        color: var(--neon-main);
-        background: transparent;
-        font-size: 11px;
-        cursor: pointer;
-        margin-top: 4px;
-    }
-
-    .refresh-btn:active {
-        transform: scale(0.96);
-    }
-</style>
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #1a1a1a;
+            border-radius: 6px;
+        }
+    </style>
 </head>
+
 <body>
 
-<script>
-const tg = window.Telegram.WebApp;
-tg.expand();
-if (tg.colorScheme === "light") {
-    document.documentElement.style.setProperty('--bg-dark', 'rgba(0, 20, 15, 0.9)');
-    document.documentElement.style.setProperty('--text-main', '#003322');
-}
-</script>
+    <h1>Admin Panel</h1>
 
-<div class="wrapper">
-    <h1>👑 Admin Panel — DanielSant</h1>
-
-    <div class="box">
-        <h2>📊 Statistiche Globali</h2>
-        <p id="users">Utenti: ...</p>
-        <p id="contracts">Contratti: ...</p>
-        <p id="capital">Capitale Totale: ...</p>
-        <p id="power">Potenza Rete: ...</p>
-        <p id="generated">Crediti Generati: ...</p>
-        <span class="badge" id="lastUpdate">Ultimo aggiornamento: --:--:--</span>
-        <br>
-        <button class="refresh-btn" id="refreshBtn">Aggiorna ora</button>
+    <div class="section">
+        <p><strong>Utenti totali:</strong> 0</p>
+        <p><strong>Investito totale:</strong> 0.00€</p>
+        <p><strong>Contratti attivi:</strong> 0</p>
     </div>
-
-    <div class="box">
-        <h2>📜 Ultimi Contratti</h2>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>User ID</th>
-                        <th>Capitale</th>
-                        <th>Data Inizio</th>
-                    </tr>
-                </thead>
-                <tbody id="contractsBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="box">
-        <h2>🎁 Ultimi Bonus</h2>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>User ID</th>
-                        <th>Tipo</th>
-                        <th>Importo</th>
-                        <th>Descrizione</th>
-                        <th>Data</th>
-                    </tr>
-                </thead>
-                <tbody id="bonusBody"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<script>
-function loadOverview() {
-    fetch("/api/overview")
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById("users").innerText = "Utenti: " + data.users;
-            document.getElementById("contracts").innerText = "Contratti: " + data.contracts;
-            document.getElementById("capital").innerText = "Capitale Totale: " + data.capital + "€";
-            document.getElementById("power").innerText = "Potenza Rete: " + data.network_power;
-            document.getElementById("generated").innerText = "Crediti Generati: " + data.generated_credits;
-
-            const now = new Date();
-            document.getElementById("lastUpdate").innerText =
-                "Ultimo aggiornamento: " + now.toLocaleTimeString();
-        });
-}
-
-function loadContracts() {
-    fetch("/api/admin/last_contracts")
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById("contractsBody");
-            tbody.innerHTML = "";
-            data.forEach(row => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${row.user_id}</td>
-                    <td>${row.capital}</td>
-                    <td>${row.start}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        });
-}
-
-function loadBonus() {
-    fetch("/api/admin/last_bonus")
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById("bonusBody");
-            tbody.innerHTML = "";
-            data.forEach(row => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${row.user_id}</td>
-                    <td>${row.type}</td>
-                    <td>${row.amount}</td>
-                    <td>${row.desc}</td>
-                    <td>${row.date}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        });
-}
-
-function refreshAll() {
-    loadOverview();
-    loadContracts();
-    loadBonus();
-}
-
-document.getElementById("refreshBtn").addEventListener("click", refreshAll);
-
-setInterval(refreshAll, 7000);
-refreshAll();
-</script>
 
 </body>
 </html>
