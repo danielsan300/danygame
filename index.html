@@ -1,69 +1,1185 @@
-const NGROK_URL = "https://nicky-quixotic-uncomplacently.ngrok-free.dev";
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Omniverse Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-async function caricaPannelloAdmin() {
-    const myId = window.Telegram.WebApp.initDataUnsafe.user.id;
-    
-    try {
-        const response = await fetch(`${NGROK_URL}/api/admin_panel?id=${myId}`);
-        
-        if (response.status === 403) {
-            document.getElementById('admin-tab').style.display = 'none';
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    color: #00ffea;
+}
+
+/* MATRIX */
+#matrix {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+}
+
+/* WEBGL 3D */
+#webgl {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 140px;
+    height: 140px;
+    z-index: 2;
+    border: 1px solid #00fff6;
+    box-shadow: 0 0 12px #00fff6;
+}
+
+/* INTRO */
+#intro {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+#intro-box {
+    width: 90%;
+    max-width: 480px;
+    padding: 20px;
+    border: 1px solid #00fff6;
+    box-shadow: 0 0 20px #00fff6;
+    background: rgba(0,0,0,0.8);
+}
+#intro-text {
+    white-space: pre-wrap;
+    font-size: 12px;
+    color: #00ff9d;
+}
+#skip {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid #00fff6;
+    color: #00fff6;
+    cursor: pointer;
+}
+
+/* PANEL */
+#panel {
+    position: relative;
+    z-index: 5;
+    padding: 15px;
+    display: none;
+}
+#header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+#header-logo {
+    width: 40px;
+    height: 40px;
+}
+.title {
+    font-size: 18px;
+    text-shadow: 0 0 10px #00fff6;
+}
+#nav-bar {
+    margin-top: 8px;
+    height: 24px;
+    background-image: url("nav_arena.png");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.8;
+}
+#search {
+    width: 100%;
+    padding: 6px;
+    margin-top: 10px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #00fff6;
+    color: #fff;
+}
+#stats {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(0,0,0,0.5);
+    border-left: 3px solid #00fff6;
+}
+
+/* GRAPH */
+#graph-container {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(0,0,0,0.5);
+    border-left: 3px solid #ff00ff;
+}
+#graph-canvas {
+    width: 100%;
+    height: 140px;
+    background: #020308;
+    border: 1px solid #00fff6;
+}
+
+/* MISSIONI */
+#missions {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(0,0,0,0.5);
+    border-left: 3px solid #ffcf33;
+    font-size: 11px;
+}
+.mission {
+    margin-bottom: 4px;
+}
+.mission span {
+    font-weight: bold;
+}
+
+/* EVENT LOG */
+#event-log {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(0,0,0,0.5);
+    border-left: 3px solid #00ffea;
+    font-size: 10px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+/* USER CARDS */
+.card {
+    background: rgba(0,0,0,0.7);
+    border-left: 3px solid #ff00ff;
+    padding: 10px;
+    margin-top: 10px;
+    box-shadow: 0 0 10px #ff00ff;
+}
+.badge {
+    display: inline-block;
+    padding: 2px 6px;
+    margin-right: 4px;
+    border-radius: 4px;
+    font-size: 10px;
+    border: 1px solid;
+}
+.level { border-color: #ffcf33; color: #ffcf33; }
+.rare { border-color: #ff00ff; color: #ff00ff; }
+.sys { border-color: #00fff6; color: #00fff6; }
+.badge-img {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+/* ACTIONS */
+.actions {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.actions button {
+    flex: 1 1 30%;
+    padding: 5px;
+    background: black;
+    border: 1px solid #fff;
+    color: #fff;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+/* TERMINAL & GAMES BUTTONS */
+#terminal-btn, #games-btn {
+    position: fixed;
+    bottom: 10px;
+    z-index: 20;
+    padding: 6px 12px;
+    border: 1px solid #00fff6;
+    background: rgba(0,0,0,0.7);
+    color: #00fff6;
+    cursor: pointer;
+}
+#terminal-btn { right: 10px; }
+#games-btn { left: 10px; }
+
+/* TERMINAL */
+#terminal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 30;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#terminal-box {
+    width: 90%;
+    max-width: 500px;
+    background: black;
+    border: 1px solid #ff00ff;
+    padding: 10px;
+    box-shadow: 0 0 20px #ff00ff;
+}
+#term-out {
+    height: 200px;
+    overflow-y: auto;
+    color: #00ff9d;
+    font-size: 12px;
+}
+#term-in {
+    width: 100%;
+    padding: 6px;
+    background: #111;
+    border: 1px solid #00fff6;
+    color: #fff;
+}
+
+/* AUDIO TOGGLE */
+#audio-toggle {
+    margin-top: 10px;
+    padding: 6px;
+    border: 1px solid #ff00ff;
+    background: rgba(0,0,0,0.6);
+    color: #ff00ff;
+    cursor: pointer;
+}
+
+/* TOAST */
+#toast {
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    border: 1px solid #00fff6;
+    display: none;
+    z-index: 40;
+}
+
+/* GAMES MODAL */
+#games-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 35;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#games-box {
+    width: 95%;
+    max-width: 520px;
+    background: #020308;
+    border: 1px solid #00fff6;
+    box-shadow: 0 0 20px #00fff6;
+    padding: 10px;
+    background-image: url("bg_arena.png");
+    background-size: cover;
+    background-position: center;
+}
+#game-title {
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #00fff6;
+    text-shadow: 0 0 8px #00fff6;
+}
+#games-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.game-btn {
+    flex: 1 1 48%;
+    padding: 6px;
+    border: 1px solid #ff00ff;
+    background: rgba(0,0,0,0.8);
+    color: #ff00ff;
+    cursor: pointer;
+    font-size: 11px;
+}
+#game-canvas {
+    width: 100%;
+    height: 220px;
+    background: #000;
+    border: 1px solid #00fff6;
+}
+#games-close {
+    margin-top: 6px;
+    padding: 4px 8px;
+    border: 1px solid #00fff6;
+    background: transparent;
+    color: #00fff6;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+<canvas id="webgl"></canvas>
+
+<!-- INTRO -->
+<div id="intro">
+    <div id="intro-box">
+        <div id="intro-text"></div>
+        <button id="skip">SKIP</button>
+    </div>
+</div>
+
+<!-- PANEL -->
+<div id="panel">
+    <div id="header">
+        <img id="header-logo" src="logo.png" alt="logo">
+        <div class="title">OMNIVERSE CONTROL NODE</div>
+    </div>
+    <div id="nav-bar"></div>
+
+    <button id="audio-toggle">AUDIO OFF</button>
+    <input id="search" placeholder="Cerca utente...">
+    <div id="stats"></div>
+
+    <div id="graph-container">
+        <b>NEON BALANCE GRAPH (last 1h)</b>
+        <canvas id="graph-canvas"></canvas>
+    </div>
+
+    <div id="missions"></div>
+    <div id="event-log"></div>
+    <div id="users"></div>
+</div>
+
+<!-- TERMINAL & GAMES -->
+<button id="terminal-btn">TERMINAL</button>
+<button id="games-btn">GAMES</button>
+
+<div id="terminal">
+    <div id="terminal-box">
+        <div id="term-out">>> Omniverse Terminal Ready</div>
+        <input id="term-in" placeholder="digita un comando...">
+    </div>
+</div>
+
+<div id="games-modal">
+    <div id="games-box">
+        <div id="game-title">Seleziona un gioco</div>
+        <div id="games-list">
+            <button class="game-btn" data-game="snake">CYBER SNAKE</button>
+            <button class="game-btn" data-game="runner">MATRIX RUNNER</button>
+            <button class="game-btn" data-game="tap">TAP REACTOR</button>
+            <button class="game-btn" data-game="miner">CRYPTO MINER</button>
+            <button class="game-btn" data-game="hack">HACK PUZZLE</button>
+        </div>
+        <canvas id="game-canvas"></canvas>
+        <button id="games-close">CLOSE</button>
+    </div>
+</div>
+
+<!-- AUDIO -->
+<audio id="bg" loop>
+    <source src="sound_clik.mp3">
+</audio>
+
+<!-- CLICK SOUND (stesso file per coerenza) -->
+<audio id="click-sound">
+    <source src="sound_clik.mp3">
+</audio>
+
+<div id="toast"></div>
+
+<script>
+/* ========== MATRIX ========== */
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+function resizeMatrix() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+resizeMatrix();
+window.addEventListener('resize', resizeMatrix);
+
+const chars = "01ネオ未来矩陣░▒▓█";
+const font = 14;
+let cols = Math.floor(canvas.width / font);
+let drops = Array(cols).fill(1);
+
+function matrix() {
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = "#00ff9d";
+    ctx.font = font + "px monospace";
+
+    for (let i=0;i<drops.length;i++) {
+        const text = chars[Math.floor(Math.random()*chars.length)];
+        ctx.fillText(text, i*font, drops[i]*font);
+
+        if (drops[i]*font > canvas.height && Math.random() > 0.98) drops[i]=0;
+        drops[i]+=0.3;
+    }
+    requestAnimationFrame(matrix);
+}
+matrix();
+
+/* ========== WEBGL 3D ========== */
+function initWebGL() {
+    const glCanvas = document.getElementById("webgl");
+    const gl = glCanvas.getContext("webgl");
+    if (!gl) return;
+
+    glCanvas.width = glCanvas.clientWidth;
+    glCanvas.height = glCanvas.clientHeight;
+    gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+
+    const vsSource = `
+        attribute vec3 aPos;
+        uniform float uTime;
+        void main() {
+            float angle = uTime;
+            mat4 rotZ = mat4(
+                cos(angle), -sin(angle), 0.0, 0.0,
+                sin(angle),  cos(angle), 0.0, 0.0,
+                0.0,         0.0,        1.0, 0.0,
+                0.0,         0.0,        0.0, 1.0
+            );
+            gl_Position = rotZ * vec4(aPos, 1.0);
+        }
+    `;
+    const fsSource = `
+        precision mediump float;
+        void main() {
+            gl_FragColor = vec4(0.0, 1.0, 0.6, 1.0);
+        }
+    `;
+
+    function compile(type, source) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, source);
+        gl.compileShader(s);
+        return s;
+    }
+
+    const vs = compile(gl.VERTEX_SHADER, vsSource);
+    const fs = compile(gl.FRAGMENT_SHADER, fsSource);
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    const vertices = new Float32Array([
+        -0.6, -0.6, 0.0,
+         0.6, -0.6, 0.0,
+         0.0,  0.6, 0.0
+    ]);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+    const aPos = gl.getAttribLocation(prog, "aPos");
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+
+    const uTime = gl.getUniformLocation(prog, "uTime");
+
+    function render(t) {
+        gl.clearColor(0,0,0,1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform1f(uTime, t*0.001);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+}
+initWebGL();
+
+/* ========== INTRO ========== */
+const introLines = [
+    "Initializing Omniverse Core...",
+    "Loading quantum matrices...",
+    "Decrypting operator identity...",
+    "Establishing secure uplink...",
+    "Access granted."
+];
+let i=0, j=0;
+function typeIntro() {
+    const box = document.getElementById("intro-text");
+    if (i < introLines.length) {
+        if (j <= introLines[i].length) {
+            box.textContent = introLines.slice(0,i).join("\n") + "\n" + introLines[i].slice(0,j);
+            j++;
+            setTimeout(typeIntro, 40);
+        } else {
+            i++; j=0;
+            setTimeout(typeIntro, 200);
+        }
+    } else {
+        setTimeout(endIntro, 500);
+    }
+}
+typeIntro();
+function endIntro() {
+    document.getElementById("intro").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+    loadAll();
+}
+document.getElementById("skip").onclick = endIntro;
+
+/* ========== AUDIO & CLICK SOUND ========== */
+const audio = document.getElementById("bg");
+const audioBtn = document.getElementById("audio-toggle");
+const clickSound = document.getElementById("click-sound");
+let audioOn = false;
+
+function playClick() {
+    clickSound.currentTime = 0;
+    clickSound.play().catch(()=>{});
+}
+audioBtn.onclick = () => {
+    playClick();
+    if (!audioOn) {
+        audio.play().then(()=>{
+            audioOn = true;
+            audioBtn.textContent = "AUDIO ON";
+            audioBtn.style.color = "#00ff9d";
+        }).catch(()=>{});
+    } else {
+        audio.pause();
+        audioOn = false;
+        audioBtn.textContent = "AUDIO OFF";
+        audioBtn.style.color = "#ff00ff";
+    }
+};
+
+/* ========== TOAST ========== */
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.display = "block";
+    setTimeout(()=>t.style.display="none", 2000);
+}
+
+/* ========== API ========== */
+const NGROK_URL = "https://nicky-quixotic-uncomplacently.ngrok-free.dev";
+async function api(path) {
+    const res = await fetch(NGROK_URL + path);
+    if (!res.ok) throw new Error("API error");
+    return res.json();
+}
+
+/* ========== BADGE + LEVEL ========== */
+function getBadges(u) {
+    const saldo = Number(u.saldo);
+    const badges = [];
+    if (saldo >= 500) badges.push({t:"ORACLE", c:"level"});
+    else if (saldo >= 200) badges.push({t:"ARCHITECT", c:"level"});
+    else if (saldo >= 50) badges.push({t:"AGENT", c:"level"});
+    else badges.push({t:"NEO", c:"level"});
+    if (saldo >= 100) badges.push({t:"HIGH ROLLER", c:"rare"});
+    if (String(u.id).endsWith("42")) badges.push({t:"WHITE RABBIT", c:"rare"});
+    if (u.id == 294395952) badges.push({t:"PRIME NODE", c:"sys"});
+    return badges;
+}
+
+/* ========== MISSIONI ========== */
+function renderMissions(utenti) {
+    const missionsEl = document.getElementById("missions");
+    const totalUsers = utenti.length;
+    const totalSaldo = utenti.reduce((a,b)=>a+Number(b.saldo),0);
+    const top = utenti.length ? utenti.reduce((a,b)=>Number(a.saldo)>Number(b.saldo)?a:b) : null;
+    const missions = [
+        { name: "Recruit 10 operators", done: totalUsers >= 10 },
+        { name: "Reach total balance of €500", done: totalSaldo >= 500 },
+        { name: "Have a top user with €200+", done: top && Number(top.saldo) >= 200 }
+    ];
+    missionsEl.innerHTML = "<b>MISSIONS:</b><br>";
+    missions.forEach(m => {
+        missionsEl.innerHTML += `<div class="mission">[${m.done ? "✔" : "✖"}] <span>${m.name}</span></div>`;
+    });
+}
+
+/* ========== EVENT LOG ========== */
+async function loadLogs() {
+    const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+    const logs = await api(`/api/get_logs?id=${uid}`);
+    const el = document.getElementById("event-log");
+    el.innerHTML = "<b>EVENT LOG (last 50):</b><br>";
+    logs.forEach(l => {
+        const d = new Date(l.timestamp*1000);
+        const time = d.toLocaleTimeString();
+        const val = l.valore >= 0 ? "+"+l.valore : l.valore;
+        el.innerHTML += `[${time}] ${l.utente_nome} — ${l.azione} (${val})<br>`;
+    });
+}
+
+/* ========== GRAPH ========== */
+const graphCanvas = document.getElementById("graph-canvas");
+const gctx = graphCanvas.getContext("2d");
+function resizeGraph() {
+    graphCanvas.width = graphCanvas.clientWidth;
+    graphCanvas.height = graphCanvas.clientHeight;
+}
+resizeGraph();
+window.addEventListener('resize', resizeGraph);
+
+async function loadGraph() {
+    const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+    const data = await api(`/api/get_graph_data?id=${uid}`);
+    drawGraph(data);
+}
+function drawGraph(data) {
+    gctx.clearRect(0,0,graphCanvas.width,graphCanvas.height);
+    if (!data.length) {
+        gctx.fillStyle = "#888";
+        gctx.fillText("No data yet", 10, 20);
+        return;
+    }
+    const w = graphCanvas.width;
+    const h = graphCanvas.height;
+    const ts = data.map(d=>d.timestamp);
+    const minT = Math.min(...ts);
+    const maxT = Math.max(...ts);
+    const vals = data.flatMap(d=>[d.saldo_totale, d.saldo_top]);
+    const maxV = Math.max(...vals) || 1;
+
+    gctx.strokeStyle = "rgba(0,255,246,0.2)";
+    gctx.beginPath();
+    gctx.moveTo(30, 10);
+    gctx.lineTo(30, h-20);
+    gctx.lineTo(w-10, h-20);
+    gctx.stroke();
+
+    function mapX(t) {
+        if (maxT === minT) return 30;
+        return 30 + (t-minT)/(maxT-minT) * (w-40);
+    }
+    function mapY(v) {
+        return (h-20) - (v/maxV)*(h-40);
+    }
+
+    gctx.strokeStyle = "#00fff6";
+    gctx.lineWidth = 2;
+    gctx.shadowColor = "#00fff6";
+    gctx.shadowBlur = 8;
+    gctx.beginPath();
+    data.forEach((d, idx)=>{
+        const x = mapX(d.timestamp);
+        const y = mapY(d.saldo_totale);
+        if (idx===0) gctx.moveTo(x,y); else gctx.lineTo(x,y);
+    });
+    gctx.stroke();
+
+    gctx.strokeStyle = "#ff00ff";
+    gctx.shadowColor = "#ff00ff";
+    gctx.beginPath();
+    data.forEach((d, idx)=>{
+        const x = mapX(d.timestamp);
+        const y = mapY(d.saldo_top);
+        if (idx===0) gctx.moveTo(x,y); else gctx.lineTo(x,y);
+    });
+    gctx.stroke();
+
+    gctx.shadowBlur = 0;
+    gctx.fillStyle = "#00fff6";
+    gctx.fillText("Total", 35, 15);
+    gctx.fillStyle = "#ff00ff";
+    gctx.fillText("Top", 90, 15);
+}
+
+/* ========== USERS / CLASSIFICA ========== */
+async function loadUsers() {
+    const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+    const utenti = await api(`/api/admin_panel?id=${uid}`);
+    const stats = document.getElementById("stats");
+    const users = document.getElementById("users");
+
+    if (!utenti.length) {
+        stats.textContent = "Nessun utente registrato.";
+        users.innerHTML = "";
+        renderMissions([]);
+        return;
+    }
+
+    const total = utenti.reduce((a,b)=>a+Number(b.saldo),0);
+    const top = utenti.reduce((a,b)=>Number(a.saldo)>Number(b.saldo)?a:b);
+
+    const sorted = [...utenti].sort((a,b)=>Number(b.saldo)-Number(a.saldo)).slice(0,5);
+    let topList = sorted.map((u,idx)=>`${idx+1}) ${u.nome} (€${Number(u.saldo).toFixed(2)})`).join(" | ");
+
+    stats.innerHTML = `
+        Utenti: ${utenti.length} |
+        Saldo Totale: €${total.toFixed(2)} |
+        Top: ${top.nome} (€${Number(top.saldo).toFixed(2)})<br>
+        <span style="font-size:10px;color:#ffcf33;">TOP 5: ${topList}</span>
+    `;
+
+    renderMissions(utenti);
+
+    const filtro = document.getElementById("search").value.toLowerCase();
+    users.innerHTML = "";
+
+    utenti
+        .filter(u => !filtro || u.nome.toLowerCase().includes(filtro) || String(u.id).includes(filtro))
+        .forEach(u => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const badges = getBadges(u).map(b => `<span class="badge ${b.c}">${b.t}</span>`).join("");
+            const eliteImg = Number(u.saldo) >= 300 ? `<img class="badge-img" src="chilp..png" alt="elite">` : "";
+
+            card.innerHTML = `
+                <div><b>${u.nome.toUpperCase()}</b> — €${Number(u.saldo).toFixed(2)} ${eliteImg}</div>
+                <div>UID_${u.id}</div>
+                <div>${badges}</div>
+                <div class="actions">
+                    <button onclick="edit(${u.id},10,'ADMIN_PREMIO_10')">+10€</button>
+                    <button onclick="edit(${u.id},50,'ADMIN_PREMIO_50')">+50€</button>
+                    <button onclick="premiaCustom(${u.id})">CUSTOM</button>
+                    <button onclick="edit(${u.id},-10,'ADMIN_PENALTY_-10')">-10€</button>
+                    <button onclick="ban(${u.id})">BAN</button>
+                </div>
+            `;
+            users.appendChild(card);
+        });
+}
+
+async function edit(id, amount, reason) {
+    playClick();
+    const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+    await api(`/api/edit_balance?admin=${uid}&target=${id}&amount=${amount}&reason=${encodeURIComponent(reason)}`);
+    showToast(`Saldo aggiornato (${amount>0?"+":""}${amount}€)`);
+    loadAll();
+}
+function premiaCustom(id) {
+    const v = prompt("Inserisci importo premio (es. 25):");
+    if (!v) return;
+    const amount = parseFloat(v.replace(",","."));
+    if (isNaN(amount)) {
+        showToast("Importo non valido");
+        return;
+    }
+    edit(id, amount, 'ADMIN_PREMIO_CUSTOM');
+}
+async function ban(id) {
+    playClick();
+    if (!confirm("CONFERMI ELIMINAZIONE SOGGETTO DAL DATABASE?")) return;
+    const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+    await api(`/api/ban?admin=${uid}&target=${id}`);
+    showToast("Utente eliminato");
+    loadAll();
+}
+
+/* ========== TERMINAL ========== */
+const termBtn = document.getElementById("terminal-btn");
+const term = document.getElementById("terminal");
+const termOut = document.getElementById("term-out");
+const termIn = document.getElementById("term-in");
+let defaultTermHandler = null;
+
+termBtn.onclick = () => {
+    playClick();
+    term.style.display = "flex";
+};
+term.onclick = e => {
+    if (e.target === term) term.style.display = "none";
+};
+defaultTermHandler = async function(e) {
+    if (e.key === "Enter") {
+        const cmd = termIn.value.trim();
+        termIn.value = "";
+        termOut.textContent += "\n> " + cmd;
+
+        if (cmd === "wake_up_neo") termOut.textContent += "\nThe Matrix has you...";
+        else if (cmd === "follow_the_white_rabbit") termOut.textContent += "\n🐇 Rabbit detected.";
+        else if (cmd === "there_is_no_spoon") termOut.textContent += "\nReality distorted.";
+        else if (cmd.startsWith("trace")) termOut.textContent += "\nTracing signal...";
+        else if (cmd === "info_project") {
+            try {
+                const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+                const res = await api(`/api/readme?id=${uid}`);
+                termOut.textContent += "\n--- README ---\n" + (res.content || "").slice(0,2000) + "\n--- END ---";
+            } catch(e) {
+                termOut.textContent += "\nErrore lettura README.";
+            }
+        }
+        else termOut.textContent += "\nUnknown command.";
+
+        termOut.scrollTop = termOut.scrollHeight;
+    }
+};
+termIn.onkeydown = defaultTermHandler;
+
+/* ========== GAMES HUB ========== */
+const gamesBtn = document.getElementById("games-btn");
+const gamesModal = document.getElementById("games-modal");
+const gamesClose = document.getElementById("games-close");
+const gameCanvas = document.getElementById("game-canvas");
+const gameTitle = document.getElementById("game-title");
+const gamesList = document.getElementById("games-list");
+let gameCtx = gameCanvas.getContext("2d");
+let currentGame = null;
+let gameLoopId = null;
+
+function openGames() {
+    playClick();
+    gamesModal.style.display = "flex";
+    gameTitle.textContent = "Seleziona un gioco";
+    gameCtx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
+}
+function closeGames() {
+    gamesModal.style.display = "none";
+    stopGameLoop();
+}
+gamesBtn.onclick = openGames;
+gamesClose.onclick = closeGames;
+gamesModal.onclick = e => { if (e.target === gamesModal) closeGames(); };
+
+function stopGameLoop() {
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
+    gameLoopId = null;
+    currentGame = null;
+}
+function resizeGameCanvas() {
+    gameCanvas.width = gameCanvas.clientWidth;
+    gameCanvas.height = gameCanvas.clientHeight;
+}
+resizeGameCanvas();
+window.addEventListener('resize', resizeGameCanvas);
+
+gamesList.addEventListener("click", e => {
+    if (!e.target.classList.contains("game-btn")) return;
+    const game = e.target.dataset.game;
+    playClick();
+    startGame(game);
+});
+
+/* ====== CYBER SNAKE ====== */
+function startSnake() {
+    gameTitle.textContent = "CYBER SNAKE";
+    const ctx = gameCtx;
+    const size = 10;
+    let snake = [{x:10,y:10}];
+    let dir = {x:1,y:0};
+    let food = {x:15,y:10};
+    let speed = 100;
+    let lastTime = 0;
+    let score = 0;
+
+    function placeFood() {
+        food.x = Math.floor(Math.random()* (gameCanvas.width/size));
+        food.y = Math.floor(Math.random()* (gameCanvas.height/size));
+    }
+    function loop(t) {
+        gameLoopId = requestAnimationFrame(loop);
+        if (t - lastTime < speed) return;
+        lastTime = t;
+
+        const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+        if (head.x<0 || head.y<0 || head.x>=gameCanvas.width/size || head.y>=gameCanvas.height/size ||
+            snake.some(s=>s.x===head.x && s.y===head.y)) {
+            showToast("Snake: GAME OVER (score "+score+")");
+            stopGameLoop();
             return;
         }
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            placeFood();
+        } else {
+            snake.pop();
+        }
 
-        const utenti = await response.json();
-        let html = '<h3 style="color:#ffcf33; font-family:Orbitron;">DATABASE UTENTI</h3>';
+        ctx.fillStyle = "black";
+        ctx.fillRect(0,0,gameCanvas.width,gameCanvas.height);
+        ctx.fillStyle = "#00ff9d";
+        snake.forEach(s=>{
+            ctx.fillRect(s.x*size, s.y*size, size-1, size-1);
+        });
+        ctx.fillStyle = "#ff00ff";
+        ctx.fillRect(food.x*size, food.y*size, size-1, size-1);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("Score: "+score, 4, 10);
+    }
+    stopGameLoop();
+    currentGame = "snake";
+    requestAnimationFrame(loop);
 
-        utenti.forEach(u => {
-            html += `
-                <div class="card" style="border-left: 4px solid #ff00ff; margin-bottom:10px; padding:15px; background:rgba(0,0,0,0.3);">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b>${u.nome}</b> 
-                        <span style="color:#ffcf33; font-weight:bold;">€ ${u.saldo.toFixed(2)}</span>
-                    </div>
-                    <div style="margin-top:5px; font-size:10px; opacity:0.6;">ID: ${u.id}</div>
-                    
-                    <div style="margin-top:10px; display:flex; gap:10px;">
-                        <button onclick="modificaSaldo(${u.id}, 10)" style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">+10€</button>
-                        <button onclick="modificaSaldo(${u.id}, -10)" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">-10€</button>
-                        <button onclick="bannaUtente(${u.id})" style="background:#6c757d; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">BAN</button>
-                    </div>
-                </div>`;
+    window.onkeydown = e => {
+        if (currentGame !== "snake") return;
+        if (e.key === "ArrowUp" && dir.y===0) dir={x:0,y:-1};
+        if (e.key === "ArrowDown" && dir.y===0) dir={x:0,y:1};
+        if (e.key === "ArrowLeft" && dir.x===0) dir={x:-1,y:0};
+        if (e.key === "ArrowRight" && dir.x===0) dir={x:1,y:0};
+    };
+}
+
+/* ====== MATRIX RUNNER ====== */
+function startRunner() {
+    gameTitle.textContent = "MATRIX RUNNER";
+    const ctx = gameCtx;
+    let player = {x: gameCanvas.width/2, y: gameCanvas.height-20, r:8};
+    let obstacles = [];
+    let lastSpawn = 0;
+    let speed = 2;
+    let score = 0;
+    let lastTime = 0;
+
+    function spawn() {
+        obstacles.push({
+            x: Math.random()*gameCanvas.width,
+            y: -10,
+            r: 6 + Math.random()*6
+        });
+    }
+    function loop(t) {
+        gameLoopId = requestAnimationFrame(loop);
+        if (t - lastTime < 16) return;
+        lastTime = t;
+
+        if (t - lastSpawn > 600) {
+            spawn();
+            lastSpawn = t;
+        }
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(0,0,gameCanvas.width,gameCanvas.height);
+
+        ctx.fillStyle = "#00ff9d";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.fillStyle = "#00ffea";
+        obstacles.forEach(o=>{
+            o.y += speed;
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, o.r, 0, Math.PI*2);
+            ctx.fill();
+        });
+        obstacles = obstacles.filter(o=>o.y < gameCanvas.height+10);
+
+        obstacles.forEach(o=>{
+            const dx = o.x - player.x;
+            const dy = o.y - player.y;
+            const dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist < o.r + player.r) {
+                showToast("Runner: GAME OVER (score "+score+")");
+                stopGameLoop();
+            }
         });
 
-        document.getElementById('dynamic-user-list').innerHTML = html;
-        document.getElementById('admin-tab').style.display = 'block';
-
-    } catch (e) {
-        console.error("Server Offline o URL ngrok errato");
+        score++;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("Score: "+score, 4, 10);
     }
+    stopGameLoop();
+    currentGame = "runner";
+    requestAnimationFrame(loop);
+
+    gameCanvas.onmousemove = e => {
+        if (currentGame !== "runner") return;
+        const rect = gameCanvas.getBoundingClientRect();
+        player.x = e.clientX - rect.left;
+    };
 }
 
-// Funzione per aggiungere o togliere soldi
-async function modificaSaldo(targetId, amount) {
-    const myId = window.Telegram.WebApp.initDataUnsafe.user.id;
-    try {
-        await fetch(`${NGROK_URL}/api/edit_balance?admin=${myId}&target=${targetId}&amount=${amount}`);
-        caricaPannelloAdmin(); // Ricarica subito la lista per vedere il cambio
-    } catch (e) {
-        alert("Errore durante la modifica saldo");
-    }
-}
+/* ====== TAP REACTOR ====== */
+function startTap() {
+    gameTitle.textContent = "TAP REACTOR";
+    const ctx = gameCtx;
+    let nodes = [];
+    let score = 0;
+    let lastSpawn = 0;
+    let lastTime = 0;
 
-// Funzione per eliminare l'utente dal database
-async function bannaUtente(targetId) {
-    const myId = window.Telegram.WebApp.initDataUnsafe.user.id;
-    if (confirm("Vuoi davvero eliminare questo utente dal database locale?")) {
-        try {
-            await fetch(`${NGROK_URL}/api/ban?admin=${myId}&target=${targetId}`);
-            caricaPannelloAdmin();
-        } catch (e) {
-            alert("Errore durante il ban");
+    function spawn() {
+        nodes.push({
+            x: Math.random()*gameCanvas.width,
+            y: Math.random()*gameCanvas.height,
+            r: 10,
+            life: 1000
+        });
+    }
+    function loop(t) {
+        gameLoopId = requestAnimationFrame(loop);
+        if (t - lastTime < 16) return;
+        const dt = t - lastTime;
+        lastTime = t;
+
+        if (t - lastSpawn > 700) {
+            spawn();
+            lastSpawn = t;
         }
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(0,0,gameCanvas.width,gameCanvas.height);
+
+        nodes.forEach(n=>{
+            n.life -= dt;
+            ctx.strokeStyle = "#ff00ff";
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+            ctx.stroke();
+        });
+        nodes = nodes.filter(n=>n.life>0);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("Score: "+score, 4, 10);
     }
+    stopGameLoop();
+    currentGame = "tap";
+    requestAnimationFrame(loop);
+
+    gameCanvas.onclick = e => {
+        if (currentGame !== "tap") return;
+        const rect = gameCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        nodes.forEach(n=>{
+            const dx = n.x - mx;
+            const dy = n.y - my;
+            const dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist < n.r+5) {
+                score++;
+                n.life = 0;
+            }
+        });
+    };
 }
 
-// Aggiornamento automatico ogni 10 secondi
-setInterval(caricaPannelloAdmin, 10000);
-// Primo caricamento all'avvio
-caricaPannelloAdmin();
+/* ====== CRYPTO MINER (bonus saldo) ====== */
+function startMiner() {
+    gameTitle.textContent = "CRYPTO MINER";
+    const ctx = gameCtx;
+    let energy = 100;
+    let mined = 0;
+
+    function render() {
+        gameLoopId = requestAnimationFrame(render);
+        ctx.fillStyle = "black";
+        ctx.fillRect(0,0,gameCanvas.width,gameCanvas.height);
+        ctx.fillStyle = "#00ff9d";
+        ctx.fillText("Energy: "+energy, 10, 20);
+        ctx.fillText("Mined: "+mined, 10, 40);
+        ctx.fillText("Click to mine credits", 10, 70);
+    }
+    stopGameLoop();
+    currentGame = "miner";
+    requestAnimationFrame(render);
+
+    gameCanvas.onclick = async () => {
+        if (currentGame !== "miner") return;
+        if (energy <= 0) {
+            showToast("Energy depleted. +"+mined+"€ bonus.");
+            try {
+                const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+                await api(`/api/edit_balance?admin=${uid}&target=${uid}&amount=${mined}&reason=CRYPTO_MINER`);
+                loadAll();
+            } catch(e){}
+            stopGameLoop();
+            return;
+        }
+        energy -= 5;
+        mined += 1;
+        playClick();
+    };
+}
+
+/* ====== HACK PUZZLE ====== */
+function startHack() {
+    gameTitle.textContent = "HACK PUZZLE";
+    const ctx = gameCtx;
+    const code = Math.floor(1000 + Math.random()*9000);
+    let attempts = 5;
+
+    function render() {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0,0,gameCanvas.width,gameCanvas.height);
+        ctx.fillStyle = "#00ff9d";
+        ctx.fillText("Guess the 4-digit code", 10, 20);
+        ctx.fillText("Attempts: "+attempts, 10, 40);
+        ctx.fillText("Type in terminal: hack XXXX", 10, 70);
+    }
+    stopGameLoop();
+    currentGame = "hack";
+    render();
+
+    const oldHandler = termIn.onkeydown;
+    termIn.onkeydown = e => {
+        if (e.key === "Enter") {
+            const cmd = termIn.value.trim();
+            termIn.value = "";
+            termOut.textContent += "\n> " + cmd;
+
+            if (cmd.startsWith("hack ")) {
+                const guess = cmd.split(" ")[1];
+                if (guess == code) {
+                    termOut.textContent += "\nACCESS GRANTED";
+                    showToast("Hack Puzzle: SUCCESS (+5€)");
+                    (async ()=>{
+                        try {
+                            const uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+                            await api(`/api/edit_balance?admin=${uid}&target=${uid}&amount=5&reason=HACK_PUZZLE`);
+                            loadAll();
+                        } catch(e){}
+                    })();
+                    termIn.onkeydown = oldHandler || defaultTermHandler;
+                    stopGameLoop();
+                } else {
+                    attempts--;
+                    termOut.textContent += "\nACCESS DENIED";
+                    if (attempts <= 0) {
+                        termOut.textContent += "\nLOCKED OUT";
+                        showToast("Hack Puzzle: FAILED");
+                        termIn.onkeydown = oldHandler || defaultTermHandler;
+                        stopGameLoop();
+                    } else {
+                        render();
+                    }
+                }
+            } else {
+                if (oldHandler) oldHandler(e);
+                else if (defaultTermHandler) defaultTermHandler(e);
+            }
+            termOut.scrollTop = termOut.scrollHeight;
+        }
+    };
+}
+
+/* ====== GAME DISPATCH ====== */
+function startGame(name) {
+    if (name === "snake") startSnake();
+    if (name === "runner") startRunner();
+    if (name === "tap") startTap();
+    if (name === "miner") startMiner();
+    if (name === "hack") startHack();
+}
+
+/* ========== SEARCH & REFRESH ========== */
+document.getElementById("search").addEventListener("input", () => {
+    loadUsers();
+});
+
+async function loadAll() {
+    await Promise.all([
+        loadUsers(),
+        loadLogs(),
+        loadGraph()
+    ]);
+}
+setInterval(loadAll, 10000);
+</script>
+
+</body>
+</html>
