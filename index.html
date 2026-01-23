@@ -110,7 +110,10 @@
       text-transform: uppercase;
       letter-spacing: 0.1em;
     }
+    .badge.bronze { border-color: #cd7f32; color: #cd7f32; }
+    .badge.silver { border-color: #c0c0c0; color: #c0c0c0; }
     .badge.gold { border-color: #ffd700; color: #ffd700; }
+    .badge.platinum { border-color: #f5f5f5; color: #f5f5f5; }
     .badge.diamond { border-color: #0ff; color: #0ff; box-shadow: 0 0 10px #0ff; }
 
     .graph {
@@ -194,6 +197,21 @@
       transform: translateY(0);
       box-shadow: 0 0 4px rgba(0,255,255,0.5);
     }
+    .leaderboard {
+      margin-top: 10px;
+      font-size: 11px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0,255,255,0.2);
+      padding: 2px 0;
+    }
+    .leaderboard-item span {
+      margin-right: 6px;
+    }
   </style>
 </head>
 <body>
@@ -223,10 +241,13 @@
         </div>
       </div>
 
-      <div class="badge-row">
-        <div class="badge">Omniverse Online</div>
-        <div class="badge gold">Referral Engine</div>
-        <div class="badge diamond">Network Extraction</div>
+      <h2 style="margin-top:14px;">Livello Referral</h2>
+      <div class="badge-row" id="badgeRow">
+        <div class="badge">Loading...</div>
+      </div>
+      <div class="stat" style="margin-top:8px;">
+        <div class="label">Dettagli livello</div>
+        <div class="value small" id="levelDetails">-</div>
       </div>
 
       <h2 style="margin-top:18px;">Neon Credit Stream</h2>
@@ -239,20 +260,27 @@
         <div class="value small" id="generated">0.000000 CRX</div>
       </div>
 
-      <div class="btn-row">
-        <button class="btn" onclick="ping()">Ping Core</button>
-        <button class="btn" onclick="boost()">Simula Boost Potenza</button>
-      </div>
+      <h2 style="margin-top:16px;">Pulsanti Bot (Mirror)</h2>
+      <div class="btn-row" id="botButtons"></div>
     </div>
 
-    <!-- RIGHT: TERMINAL / LOG -->
+    <!-- RIGHT: TERMINAL / LOG + CLASSIFICHE -->
     <div class="panel">
-      <h1>Omniverse Boot Sequence</h1>
+      <h1>Omniverse Console</h1>
       <div class="terminal" id="terminal"></div>
+
+      <h2 style="margin-top:14px;">Classifica Referral Live</h2>
+      <div class="leaderboard" id="refLeaderboard"></div>
+
+      <h2 style="margin-top:10px;">Classifica Giochi CRX</h2>
+      <div class="leaderboard" id="gameLeaderboard"></div>
     </div>
   </div>
 
   <script>
+    // ID utente per la dashboard (tu)
+    const USER_ID = 294395952;
+
     const term = document.getElementById('terminal');
     const usersEl = document.getElementById('users');
     const contractsEl = document.getElementById('contracts');
@@ -260,6 +288,11 @@
     const powerEl = document.getElementById('power');
     const generatedEl = document.getElementById('generated');
     const graphBar = document.getElementById('graphBar');
+    const badgeRow = document.getElementById('badgeRow');
+    const levelDetails = document.getElementById('levelDetails');
+    const botButtons = document.getElementById('botButtons');
+    const refLeaderboard = document.getElementById('refLeaderboard');
+    const gameLeaderboard = document.getElementById('gameLeaderboard');
 
     function log(line) {
       const div = document.createElement('div');
@@ -304,7 +337,6 @@
 
         generatedEl.textContent = data.generated_credits.toFixed(6) + " CRX";
 
-        // grafico: mappa crediti su 0-100%
         let pct = Math.min(100, data.generated_credits * 10);
         graphBar.style.width = pct + "%";
       } catch (e) {
@@ -312,24 +344,146 @@
       }
     }
 
-    function ping() {
-      log("[PING] Verifica stato core...");
-      setTimeout(() => {
-        log("[OK] Core sincronizzato con backend Python.");
-      }, 400);
+    async function fetchReferralLevel() {
+      try {
+        const res = await fetch(`/api/referral/level/${USER_ID}`);
+        const data = await res.json();
+
+        badgeRow.innerHTML = "";
+        const badge = document.createElement('div');
+        badge.className = 'badge';
+
+        const level = (data.level || "None").toLowerCase();
+        if (level === "bronze") badge.classList.add('bronze');
+        if (level === "silver") badge.classList.add('silver');
+        if (level === "gold") badge.classList.add('gold');
+        if (level === "platinum") badge.classList.add('platinum');
+        if (level === "diamond") badge.classList.add('diamond');
+
+        badge.textContent = `Level: ${data.level} (+${data.bonus_percent}% CRX)`;
+        badgeRow.appendChild(badge);
+
+        levelDetails.textContent =
+          `Referral: ${data.referrals} | Totale investito dai referral: ` +
+          `${data.total_invested.toFixed(2)}€`;
+      } catch (e) {
+        console.error(e);
+      }
     }
 
-    function boost() {
-      log("[SIM] Boost virtuale potenza rete...");
-      graphBar.style.width = "100%";
-      setTimeout(() => {
-        graphBar.style.width = "40%";
-      }, 600);
+    async function fetchButtons() {
+      try {
+        const res = await fetch(`/api/buttons/${USER_ID}`);
+        const data = await res.json();
+        botButtons.innerHTML = "";
+        data.buttons.forEach(b => {
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.textContent = b;
+          btn.onclick = () => handleBotButton(b);
+          botButtons.appendChild(btn);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function handleBotButton(label) {
+      log(`[UI] Pulsante premuto: ${label}`);
+      if (label === "💰 INVESTI") {
+        log(">> Azione bot: INVESTI (gestita su Telegram).");
+      } else if (label === "⚡ DASHBOARD") {
+        log(">> Azione bot: DASHBOARD (gestita su Telegram).");
+      } else if (label === "👥 INVITA AMICI") {
+        log(">> Azione bot: INVITA AMICI (gestita su Telegram).");
+      } else if (label === "🎮 GIOCHI CRX") {
+        log(">> Apertura sezione giochi CRX (classifica sotto).");
+      } else if (label === "👑 ADMIN PANEL") {
+        log(">> Pannello Admin (solo per te, Daniel).");
+      }
+    }
+
+    async function fetchReferralLeaderboard() {
+      try {
+        const res = await fetch('/api/referral/top');
+        const data = await res.json();
+        refLeaderboard.innerHTML = "";
+        if (!data.length) {
+          refLeaderboard.textContent = "Nessun dato.";
+          return;
+        }
+        data.forEach((row, idx) => {
+          const div = document.createElement('div');
+          div.className = 'leaderboard-item';
+          const left = document.createElement('span');
+          left.textContent = `${idx+1}) ${row.name} (${row.referrals})`;
+          const right = document.createElement('span');
+          right.textContent = row.level;
+          div.appendChild(left);
+          div.appendChild(right);
+          refLeaderboard.appendChild(div);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchGameLeaderboard() {
+      try {
+        const res = await fetch('/api/game/leaderboard');
+        const data = await res.json();
+        gameLeaderboard.innerHTML = "";
+        if (!data.length) {
+          gameLeaderboard.textContent = "Nessun punteggio ancora.";
+          return;
+        }
+        data.forEach((row, idx) => {
+          const div = document.createElement('div');
+          div.className = 'leaderboard-item';
+          const left = document.createElement('span');
+          left.textContent = `${idx+1}) ${row.username} (${row.game})`;
+          const right = document.createElement('span');
+          right.textContent = row.score.toFixed(2) + " CRX";
+          div.appendChild(left);
+          div.appendChild(right);
+          gameLeaderboard.appendChild(div);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function simulateGameScore() {
+      const score = Math.random() * 10;
+      fetch('/api/game/submit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_id: USER_ID,
+          username: "Daniel",
+          game: "NeonClicker",
+          score: score
+        })
+      }).then(() => {
+        log(`[GAME] Punteggio CRX inviato: ${score.toFixed(2)}`);
+        fetchGameLeaderboard();
+      });
     }
 
     bootSequence();
     fetchOverview();
+    fetchReferralLevel();
+    fetchButtons();
+    fetchReferralLeaderboard();
+    fetchGameLeaderboard();
+
     setInterval(fetchOverview, 3000);
+    setInterval(fetchReferralLevel, 5000);
+    setInterval(fetchReferralLeaderboard, 7000);
+    setInterval(fetchGameLeaderboard, 8000);
+
+    // opzionale: simulazione punteggi gioco ogni tanto
+    // setInterval(simulateGameScore, 20000);
   </script>
 </body>
 </html>
