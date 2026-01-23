@@ -3,74 +3,289 @@
 <head>
 <meta charset="UTF-8">
 <title>DanielSant — Arena Dashboard</title>
+
+<!-- Telegram WebApp -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
+    :root {
+        --neon-main: #00ff9f;
+        --neon-alt: #00ffaa;
+        --bg-dark: rgba(0, 0, 0, 0.75);
+        --text-main: #e0fff5;
+    }
+
     html, body {
         margin: 0;
         padding: 0;
         height: 100%;
-        background: url('bg_arena.png') no-repeat center center fixed;
-        background-size: cover;
+        background: black;
         font-family: 'Consolas', monospace;
-        color: #00ff9f;
-        overflow: hidden;
+        color: var(--text-main);
+        overflow-x: hidden;
     }
+
+    #matrixCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: black;
+    }
+
+    .content {
+        position: relative;
+        z-index: 5;
+        padding: 8px 0 16px 0;
+    }
+
     #nav {
         background: url('nav_arena.png') no-repeat center;
         background-size: contain;
-        height: 80px;
+        height: 55px;
         width: 100%;
-        margin-bottom: 20px;
+        margin-top: 4px;
     }
+
     #logo {
         background: url('logo.png') no-repeat center;
         background-size: contain;
-        height: 100px;
+        height: 70px;
         width: 100%;
-        margin-top: 10px;
+        margin-top: 4px;
     }
+
     .box {
-        background: rgba(0, 0, 0, 0.7);
-        border: 1px solid #00ff9f;
-        box-shadow: 0 0 15px #00ff9f;
-        padding: 20px;
-        margin: 20px auto;
-        width: 80%;
-        max-width: 900px;
+        background: var(--bg-dark);
+        border: 1px solid var(--neon-main);
+        box-shadow: 0 0 10px var(--neon-main);
+        padding: 10px;
+        margin: 8px auto;
+        width: 92%;
+        border-radius: 10px;
         text-align: center;
     }
-    h1 {
-        color: #00ffaa;
-        text-shadow: 0 0 10px #00ffaa;
-        margin-bottom: 10px;
+
+    h1, h2 {
+        font-size: 18px;
+        margin: 4px 0 6px 0;
+        text-shadow: 0 0 8px var(--neon-alt);
     }
-    canvas {
-        margin-top: 20px;
+
+    p {
+        font-size: 13px;
+        margin: 3px 0;
+    }
+
+    #creditsChart {
+        width: 100% !important;
+        height: 170px !important;
+    }
+
+    .neon-btn {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1px solid var(--neon-main);
+        color: var(--neon-main);
+        text-shadow: 0 0 6px var(--neon-main);
+        box-shadow: 0 0 10px var(--neon-main);
+        background: rgba(0, 0, 0, 0.6);
+        font-size: 13px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .neon-btn:active {
+        transform: scale(0.96);
+        box-shadow: 0 0 4px var(--neon-main);
+        background: rgba(0, 0, 0, 0.9);
+    }
+
+    .avatar-card {
+        margin-top: 6px;
+        width: 100%;
+        max-width: 260px;
+        margin-left: auto;
+        margin-right: auto;
+        perspective: 800px;
+    }
+
+    .avatar-inner {
+        background: linear-gradient(135deg, rgba(0, 255, 159, 0.15), rgba(0, 0, 0, 0.9));
+        border-radius: 12px;
+        border: 1px solid var(--neon-main);
+        box-shadow: 0 0 15px var(--neon-main);
+        padding: 10px;
+        transform-style: preserve-3d;
+        transform: rotateY(-8deg) rotateX(6deg);
+        animation: floatAvatar 4s ease-in-out infinite alternate;
+    }
+
+    .avatar-title {
+        font-size: 14px;
+        margin-bottom: 4px;
+        color: var(--neon-alt);
+    }
+
+    .avatar-sub {
+        font-size: 11px;
+        opacity: 0.9;
+    }
+
+    .avatar-chip {
+        margin-top: 6px;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--neon-alt);
+        display: inline-block;
+        box-shadow: 0 0 8px var(--neon-alt);
+    }
+
+    @keyframes floatAvatar {
+        0% { transform: rotateY(-8deg) rotateX(6deg) translateY(0); }
+        100% { transform: rotateY(8deg) rotateX(-4deg) translateY(-4px); }
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+    }
+
+    .modal {
+        background: #050b0a;
+        border-radius: 12px;
+        border: 1px solid var(--neon-main);
+        box-shadow: 0 0 18px var(--neon-main);
+        width: 88%;
+        max-width: 360px;
+        padding: 14px;
+        text-align: center;
+    }
+
+    .modal h3 {
+        margin: 4px 0 8px 0;
+        font-size: 16px;
+        color: var(--neon-alt);
+    }
+
+    .modal p {
+        font-size: 12px;
+        margin: 4px 0;
+    }
+
+    .modal-close {
+        margin-top: 10px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--neon-main);
+        background: transparent;
+        color: var(--neon-main);
+        cursor: pointer;
+        font-size: 12px;
     }
 </style>
 </head>
 <body>
 
-<div id="nav"></div>
-<div id="logo"></div>
+<canvas id="matrixCanvas"></canvas>
 
-<div class="box">
-    <h1>⚡ DanielSant — Arena Dashboard</h1>
-    <p id="users">Utenti: ...</p>
-    <p id="contracts">Contratti: ...</p>
-    <p id="capital">Capitale Totale: ...</p>
-    <p id="power">Potenza Rete: ...</p>
-    <p id="generated">Crediti Generati: ...</p>
+<div class="content">
+    <div id="nav"></div>
+    <div id="logo"></div>
+
+    <div class="box">
+        <h1>⚡ DanielSant — Arena Dashboard</h1>
+        <p id="users">Utenti: ...</p>
+        <p id="contracts">Contratti: ...</p>
+        <p id="capital">Capitale Totale: ...</p>
+        <p id="power">Potenza Rete: ...</p>
+        <p id="generated">Crediti Generati: ...</p>
+
+        <button class="neon-btn" id="infoBtn">ℹ Info Sistema</button>
+
+        <div class="avatar-card">
+            <div class="avatar-inner">
+                <div class="avatar-title">Avatar: DANIELSANT CORE</div>
+                <div class="avatar-sub">Nodo principale rete mining, sincronizzato in tempo reale.</div>
+                <div class="avatar-chip">Status: ONLINE • Hashrate dinamico</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <h2>🌌 Andamento Crediti Generati</h2>
+        <div style="position: relative; width: 100%; height: 190px;">
+            <canvas id="creditsChart"></canvas>
+        </div>
+    </div>
 </div>
 
-<div class="box">
-    <h2>🌌 Andamento Crediti Generati</h2>
-    <canvas id="creditsChart" width="800" height="300"></canvas>
+<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+        <h3>Informazioni Sistema</h3>
+        <p>Questa dashboard mostra in tempo reale:</p>
+        <p>• Utenti registrati<br>• Contratti attivi<br>• Capitale totale in gestione<br>• Potenza rete virtuale<br>• Crediti generati dal mining</p>
+        <p>Ottimizzato per integrazione Telegram WebApp.</p>
+        <button class="modal-close" id="modalClose">Chiudi</button>
+    </div>
 </div>
 
 <audio id="clickSound" src="sound_clik.mp3" preload="auto"></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+if (tg.colorScheme === "light") {
+    document.documentElement.style.setProperty('--bg-dark', 'rgba(0, 20, 15, 0.85)');
+    document.documentElement.style.setProperty('--text-main', '#003322');
+}
+
+const matrixCanvas = document.getElementById('matrixCanvas');
+const ctxM = matrixCanvas.getContext('2d');
+
+function resizeMatrix() {
+    matrixCanvas.width = window.innerWidth;
+    matrixCanvas.height = window.innerHeight;
+}
+resizeMatrix();
+window.addEventListener('resize', resizeMatrix);
+
+const letters = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&@";
+const fontSize = 14;
+let columns = Math.floor(window.innerWidth / fontSize);
+let drops = Array(columns).fill(1);
+
+function drawMatrix() {
+    ctxM.fillStyle = "rgba(0, 0, 0, 0.08)";
+    ctxM.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+
+    ctxM.fillStyle = "#00ff9f";
+    ctxM.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctxM.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+setInterval(drawMatrix, 60);
+
 let chart;
 let labels = [];
 let values = [];
@@ -88,27 +303,24 @@ function initChart() {
                 backgroundColor: 'rgba(0, 255, 159, 0.15)',
                 borderWidth: 2,
                 tension: 0.3,
-                pointRadius: 3,
+                pointRadius: 2,
                 pointBackgroundColor: '#00ffaa',
                 pointBorderColor: '#00ffaa'
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    labels: {
-                        color: '#00ff9f'
-                    }
-                }
+                legend: { labels: { color: '#00ff9f', font: { size: 11 } } }
             },
             scales: {
                 x: {
-                    ticks: { color: '#00ff9f' },
+                    ticks: { color: '#00ff9f', font: { size: 9 } },
                     grid: { color: 'rgba(0,255,159,0.1)' }
                 },
                 y: {
-                    ticks: { color: '#00ff9f' },
+                    ticks: { color: '#00ff9f', font: { size: 9 } },
                     grid: { color: 'rgba(0,255,159,0.1)' }
                 }
             }
@@ -132,21 +344,41 @@ function updateData() {
             labels.push(label);
             values.push(data.generated_credits);
 
-            if (labels.length > 30) {
+            if (labels.length > 20) {
                 labels.shift();
                 values.shift();
             }
 
             chart.update();
-
-            document.getElementById("clickSound").play();
         });
 }
 
 initChart();
 setInterval(updateData, 2000);
 updateData();
+
+const infoBtn = document.getElementById('infoBtn');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalClose = document.getElementById('modalClose');
+const clickSound = document.getElementById('clickSound');
+
+infoBtn.addEventListener('click', () => {
+    modalBackdrop.style.display = 'flex';
+    clickSound.currentTime = 0;
+    clickSound.play().catch(() => {});
+});
+
+modalClose.addEventListener('click', () => {
+    modalBackdrop.style.display = 'none';
+});
+
+modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) {
+        modalBackdrop.style.display = 'none';
+    }
+});
 </script>
 
 </body>
 </html>
+
